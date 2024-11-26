@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Contact Us{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-6">
+            <h1 class="mb-4">Contact Us</h1>
+            <form method="post" class="contact-form">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="name" class="form-label">Name</label>
+                    <input type="text" class="form-control" id="name" name="name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" name="email" required>
+                </div>
+                <div class="mb-3">
+                    <label for="subject" class="form-label">Subject</label>
+                    <input type="text" class="form-control" id="subject" name="subject" required>
+                </div>
+                <div class="mb-3">
+                    <label for="message" class="form-label">Message</label>
+                    <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Send Message</button>
+            </form>
+        </div>
+        <div class="col-md-6">
+            <div class="contact-info mt-5">
+                <h3>Get in Touch</h3>
+                <p>We'd love to hear from you. Please contact us using any of the following:</p>
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-map-marker-alt me-2"></i> 123 Market Street, City, Country</li>
+                    <li><i class="fas fa-phone me-2"></i> (123) 456-7890</li>
+                    <li><i class="fas fa-envelope me-2"></i> support@emarket.com</li>
+                </ul>
+                <h4 class="mt-4">Business Hours</h4>
+                <p>Monday - Friday: 9:00 AM - 6:00 PM<br>
+                Saturday: 10:00 AM - 4:00 PM<br>
+                Sunday: Closed</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

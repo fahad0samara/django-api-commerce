@@ -1,0 +1,8 @@
+Django
+channels
+channels-redis
+stripe
+xhtml2pdf
+django-filter
+djangorestframework
+djangorestframework-simplejwt 

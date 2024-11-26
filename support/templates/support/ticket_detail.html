@@ -1,0 +1,41 @@
+{% extends "support/base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="ticket-header">
+        <h2>{{ ticket.subject }}</h2>
+        <div class="ticket-meta">
+            <span class="ticket-status {{ ticket.status }}">{{ ticket.get_status_display }}</span>
+            <span class="ml-3">Priority: {{ ticket.get_priority_display }}</span>
+            <span class="ml-3">Created: {{ ticket.created|date:"M d, Y H:i" }}</span>
+        </div>
+        <div class="ticket-description mt-3">
+            {{ ticket.description|linebreaks }}
+        </div>
+    </div>
+
+    <div class="messages-section mt-4">
+        <h4>Messages</h4>
+        {% for message in ticket.messages.all %}
+        <div class="message-box {% if message.is_staff_reply %}staff-message{% else %}user-message{% endif %}">
+            <div class="message-meta">
+                <strong>{{ message.user.username }}</strong>
+                <small class="text-muted ml-2">{{ message.created|date:"M d, Y H:i" }}</small>
+            </div>
+            <div class="message-content mt-2">
+                {{ message.message|linebreaks }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="reply-section mt-4">
+        <h4>Add Reply</h4>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary">Send Reply</button>
+        </form>
+    </div>
+</div>
+{% endblock %} 

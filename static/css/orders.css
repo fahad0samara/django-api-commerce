@@ -1,0 +1,21 @@
+.order-info {
+    background: #f9f9f9;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+}
+
+.order-items {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.order-items th, .order-items td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.order-items .total {
+    font-weight: bold;
+    background: #f5f5f5;
+} 

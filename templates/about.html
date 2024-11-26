@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}About Us{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">About E-Market</h1>
+    <div class="row">
+        <div class="col-md-8">
+            <p class="lead">Welcome to E-Market, your trusted online shopping destination.</p>
+            <p>We are committed to providing our customers with:</p>
+            <ul>
+                <li>High-quality products</li>
+                <li>Excellent customer service</li>
+                <li>Secure shopping experience</li>
+                <li>Fast delivery</li>
+            </ul>
+            <p>Our mission is to make online shopping easy, enjoyable, and reliable for everyone.</p>
+        </div>
+        <div class="col-md-4">
+            <img src="{% static 'images/about.jpg' %}" alt="About Us" class="img-fluid rounded">
+        </div>
+    </div>
+</div>
+{% endblock %} 

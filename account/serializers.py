@@ -1,32 +1,20 @@
 from rest_framework import serializers
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 
 class SingUpSerializer(serializers.ModelSerializer):
     class Meta:
-        model= User
-        fields=('password','email','first_name','last_name')
-        extra_kwargs={
-          'first_name':{'required':True,
-            'allow_blank':False},
-            'last_name':
-            {'required':True,
-            'allow_blank':False},
-            'email':
-            {'required':True,
-            'allow_blank':False},
-            'password':
-            {'required':True,
-            'allow_blank':False},
-            'write_only':True,
-            'min_length':8
+        model = User
+        fields = ('first_name', 'last_name', 'email', 'password')
+        extra_kwargs = {
+            'password': {'write_only': True}
         }
-
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        fields=('username','password','email','first_name','last_name')
-        model= User
+        model = User
+        fields = ('id', 'first_name', 'last_name', 'email', 'username')
 
    
         

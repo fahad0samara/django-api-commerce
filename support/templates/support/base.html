@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Support Center{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ticket-list {
+        margin: 20px 0;
+    }
+    .ticket-item {
+        padding: 15px;
+        border: 1px solid #ddd;
+        margin-bottom: 10px;
+        border-radius: 4px;
+    }
+    .ticket-status {
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-size: 0.9em;
+    }
+    .ticket-status.open { background: #e3f2fd; }
+    .ticket-status.in_progress { background: #fff3e0; }
+    .ticket-status.resolved { background: #e8f5e9; }
+    .ticket-status.closed { background: #f5f5f5; }
+    .message-box {
+        margin: 10px 0;
+        padding: 15px;
+        border-radius: 4px;
+    }
+    .staff-message {
+        background: #e3f2fd;
+        margin-left: 20px;
+    }
+    .user-message {
+        background: #f5f5f5;
+        margin-right: 20px;
+    }
+</style>
+{% endblock %} 

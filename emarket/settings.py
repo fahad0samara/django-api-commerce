@@ -16,6 +16,9 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Add this line near the top of settings.py
+AUTH_USER_MODEL = 'account.User'
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -32,19 +35,28 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    # Django apps first
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    
+    # Third-party apps
     'rest_framework',
     'rest_framework_simplejwt',
-    "account",
+    'channels',
+    "django_filters",
+    
+    # Local apps - account must come first
+    "account.apps.AccountConfig",
+    "products.apps.ProductsConfig",
+    "orders.apps.OrdersConfig",
+    "support.apps.SupportConfig",
+    'cart.apps.CartConfig',
+    'notifications.apps.NotificationsConfig',
     "prodact",
-    "django_filters"
-
-
 ]
 
 MIDDLEWARE = [
@@ -62,7 +74,7 @@ ROOT_URLCONF = "emarket.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [BASE_DIR / 'templates'],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -154,3 +166,38 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Add for email notifications
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'your-actual-email@gmail.com'
+EMAIL_HOST_PASSWORD = 'your-app-specific-password'
+
+# Add to settings.py
+STRIPE_PUBLISHABLE_KEY = 'your-stripe-publishable-key'
+STRIPE_SECRET_KEY = 'your-stripe-secret-key'
+STRIPE_WEBHOOK_SECRET = 'your-stripe-webhook-secret'
+
+# Add Channels configuration
+ASGI_APPLICATION = 'emarket.asgi.application'
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    },
+}
+
+# Add these settings for media files
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Add static files configuration
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static'
+]
+STATIC_ROOT = BASE_DIR / 'staticfiles'

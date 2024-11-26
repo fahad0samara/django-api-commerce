@@ -1,0 +1,28 @@
+{% extends "support/base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Create New Support Ticket</h2>
+    <form method="post" class="mt-4">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="{{ form.subject.id_for_label }}">Subject</label>
+            {{ form.subject }}
+        </div>
+        <div class="form-group">
+            <label for="{{ form.description.id_for_label }}">Description</label>
+            {{ form.description }}
+        </div>
+        <div class="form-group">
+            <label for="{{ form.priority.id_for_label }}">Priority</label>
+            {{ form.priority }}
+        </div>
+        <div class="form-group">
+            <label for="{{ form.order.id_for_label }}">Related Order (Optional)</label>
+            {{ form.order }}
+        </div>
+        <button type="submit" class="btn btn-primary">Create Ticket</button>
+        <a href="{% url 'support:ticket_list' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %} 
