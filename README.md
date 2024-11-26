@@ -1,19 +1,27 @@
 # E-Market
 
-An e-commerce platform built with Django, featuring:
+A full-featured e-commerce platform built with Django.
 
+## Features
+
+- User authentication and authorization
 - Product catalog with categories
 - Shopping cart functionality
-- Order management system
-- Support ticket system
+- Order management
+- Payment integration (Stripe)
+- Wishlist system
+- Review system
 - Real-time notifications
-- Payment integration with Stripe
+- Admin dashboard
 
-## Setup
+## Installation
 
-1. Install dependencies:
-
-
+1. Clone the repository:
 
 
 
+
+
+
+=======
+>>>>>>> 5c7b4c128b2dc9392bb3736c12518f7201e06a09

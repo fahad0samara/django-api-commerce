@@ -1,6 +1,8 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from .models import Order, OrderItem
+from .forms import OrderCreateForm
 from cart.cart import Cart
 from django.core.mail import send_mail
 from django.conf import settings
@@ -9,24 +11,46 @@ from .utils import generate_pdf_invoice
 @login_required
 def order_create(request):
     cart = Cart(request)
+    if len(cart) == 0:
+        messages.error(request, 'Your cart is empty')
+        return redirect('cart:detail')
+
     if request.method == 'POST':
-        order = Order.objects.create(
-            user=request.user,
-            shipping_address=request.POST['shipping_address'],
-            total_amount=cart.get_total_price()
-        )
-        for item in cart:
-            OrderItem.objects.create(
-                order=order,
-                product=item['product'],
-                price=item['price'],
-                quantity=item['quantity']
-            )
-        cart.clear()
-        # Send order confirmation email
-        send_order_confirmation(order)
-        return redirect('orders:order_detail', order.id)
-    return render(request, 'orders/create.html')
+        form = OrderCreateForm(request.POST)
+        if form.is_valid():
+            order = form.save(commit=False)
+            order.user = request.user
+            order.total_amount = cart.get_total_price()
+            order.save()
+            
+            for item in cart:
+                OrderItem.objects.create(
+                    order=order,
+                    product=item['product'],
+                    price=item['price'],
+                    quantity=item['quantity']
+                )
+            
+            # Clear the cart
+            cart.clear()
+            
+            # Send confirmation email
+            order.send_confirmation_email()
+            
+            messages.success(request, 'Order placed successfully')
+            return redirect('orders:detail', order_id=order.id)
+    else:
+        form = OrderCreateForm()
+    
+    return render(request, 'orders/create.html', {
+        'cart': cart,
+        'form': form
+    })
+
+@login_required
+def order_list(request):
+    orders = Order.objects.filter(user=request.user).order_by('-created')
+    return render(request, 'orders/list.html', {'orders': orders})
 
 @login_required
 def order_detail(request, order_id):

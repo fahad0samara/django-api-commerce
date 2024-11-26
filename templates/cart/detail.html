@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Shopping Cart{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Shopping Cart</h1>
+    
+    {% if cart %}
+    <div class="row">
+        <!-- Cart Items -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    {% for item in cart %}
+                    <div class="cart-item mb-3 pb-3 border-bottom" data-product-id="{{ item.product.id }}">
+                        <div class="row align-items-center">
+                            <div class="col-md-2">
+                                {% if item.product.image %}
+                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" class="img-fluid">
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                <h5><a href="{{ item.product.get_absolute_url }}" class="text-decoration-none">{{ item.product.name }}</a></h5>
+                                <p class="text-muted mb-0">Price: ${{ item.price }}</p>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="input-group">
+                                    <button class="btn btn-outline-secondary quantity-update" type="button" data-action="decrease" title="Decrease quantity">-</button>
+                                    <input type="number" class="form-control text-center quantity-input" value="{{ item.quantity }}" min="1" aria-label="Product quantity">
+                                    <button class="btn btn-outline-secondary quantity-update" type="button" data-action="increase" title="Increase quantity">+</button>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <p class="fw-bold mb-0">${{ item.total_price }}</p>
+                            </div>
+                            <div class="col-md-1">
+                                <form action="{% url 'cart:remove' item.product.id %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-link text-danger" title="Remove item">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Cart Summary -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Cart Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Subtotal:</span>
+                        <span class="fw-bold cart-subtotal">${{ cart.get_total_price }}</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Total:</span>
+                        <span class="fw-bold cart-total">${{ cart.get_total_price }}</span>
+                    </div>
+                    <a href="{% url 'orders:create' %}" class="btn btn-primary w-100">Proceed to Checkout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-shopping-cart fa-3x mb-3 text-muted"></i>
+        <h3>Your cart is empty</h3>
+        <p class="text-muted">Add some products to your cart and they will appear here</p>
+        <a href="{% url 'products:list' %}" class="btn btn-primary">Continue Shopping</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.querySelectorAll('.quantity-update').forEach(button => {
+    button.addEventListener('click', function() {
+        const container = this.closest('.cart-item');
+        const productId = container.dataset.productId;
+        const input = container.querySelector('.quantity-input');
+        const action = this.dataset.action;
+        let quantity = parseInt(input.value);
+
+        if (action === 'increase') {
+            quantity += 1;
+        } else if (action === 'decrease' && quantity > 1) {
+            quantity -= 1;
+        }
+
+        updateCartItem(productId, quantity);
+    });
+});
+
+function updateCartItem(productId, quantity) {
+    fetch(`/cart/update/${productId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: `quantity=${quantity}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update cart count in navbar
+            const cartBadge = document.querySelector('.cart-badge');
+            if (cartBadge) {
+                cartBadge.textContent = data.cart_count;
+            }
+            // Update cart total
+            document.querySelector('.cart-subtotal').textContent = `$${data.cart_total}`;
+            document.querySelector('.cart-total').textContent = `$${data.cart_total}`;
+            // Update quantity input
+            const container = document.querySelector(`.cart-item[data-product-id="${productId}"]`);
+            container.querySelector('.quantity-input').value = quantity;
+        }
+    });
+}
+</script>
+{% endblock %} 
