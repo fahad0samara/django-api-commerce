@@ -35,28 +35,25 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    # Django apps first
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
     
     # Third-party apps
     'rest_framework',
     'rest_framework_simplejwt',
     'channels',
-    "django_filters",
+    'django_filters',
     
-    # Local apps - account must come first
-    "account.apps.AccountConfig",
-    "products.apps.ProductsConfig",
-    "orders.apps.OrdersConfig",
-    "support.apps.SupportConfig",
+    # Local apps
+    'account.apps.AccountConfig',
+    'products.apps.ProductsConfig',
+    'orders.apps.OrdersConfig',
+    'support.apps.SupportConfig',
     'cart.apps.CartConfig',
-    'notifications.apps.NotificationsConfig',
-    "prodact",
 ]
 
 MIDDLEWARE = [

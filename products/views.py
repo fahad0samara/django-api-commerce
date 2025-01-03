@@ -1,9 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
 from django.db.models import Q
-from .models import Product, Category, Review, Wishlist
+from .models import Product, Category
 
 def product_list(request):
     category_slug = request.GET.get('category')
@@ -64,64 +62,10 @@ def product_list(request):
 
 def product_detail(request, slug):
     product = get_object_or_404(Product, slug=slug, available=True)
-    related_products = product.get_related_products()
-    in_wishlist = False
-
-    if request.user.is_authenticated:
-        in_wishlist = Wishlist.objects.filter(
-            user=request.user,
-            products=product
-        ).exists()
-
+    related_products = Product.objects.filter(category=product.category).exclude(id=product.id)[:4]
+    
     context = {
         'product': product,
         'related_products': related_products,
-        'in_wishlist': in_wishlist
     }
-    return render(request, 'products/detail.html', context)
-
-@login_required
-def add_review(request, product_id):
-    if request.method == 'POST':
-        product = get_object_or_404(Product, id=product_id)
-        rating = request.POST.get('rating')
-        comment = request.POST.get('comment')
-
-        # Check if user already reviewed this product
-        if Review.objects.filter(product=product, user=request.user).exists():
-            return JsonResponse({
-                'success': False,
-                'message': 'You have already reviewed this product'
-            }, status=400)
-
-        Review.objects.create(
-            product=product,
-            user=request.user,
-            rating=rating,
-            comment=comment
-        )
-        return JsonResponse({
-            'success': True,
-            'message': 'Review added successfully'
-        })
-    return JsonResponse({'success': False}, status=405)
-
-@login_required
-def toggle_wishlist(request, product_id):
-    if request.method == 'POST':
-        product = get_object_or_404(Product, id=product_id)
-        wishlist, created = Wishlist.objects.get_or_create(user=request.user)
-        
-        if product in wishlist.products.all():
-            wishlist.products.remove(product)
-            action = 'removed'
-        else:
-            wishlist.products.add(product)
-            action = 'added'
-            
-        return JsonResponse({
-            'success': True,
-            'action': action,
-            'message': f'Product {action} to wishlist'
-        })
-    return JsonResponse({'success': False}, status=405) 
+    return render(request, 'products/detail.html', context) 
