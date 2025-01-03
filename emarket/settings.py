@@ -12,13 +12,14 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from datetime import timedelta
 from pathlib import Path
+import os
+from celery.schedules import crontab
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Add this line near the top of settings.py
 AUTH_USER_MODEL = 'account.User'
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -31,7 +32,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -42,28 +42,40 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
-    # Third-party apps
+    # Third party apps
     'rest_framework',
     'rest_framework_simplejwt',
     'channels',
     'django_filters',
+    'corsheaders',
+    'debug_toolbar',
+    'drf_spectacular',
+    'django_celery_beat',
     
     # Local apps
     'account.apps.AccountConfig',
     'products.apps.ProductsConfig',
-    'orders.apps.OrdersConfig',
-    'support.apps.SupportConfig',
     'cart.apps.CartConfig',
+    'orders.apps.OrdersConfig',
+    'payments.apps.PaymentsConfig',
+    'support.apps.SupportConfig',
+    'analytics.apps.AnalyticsConfig',
+    'search.apps.SearchConfig',
+    'forecasting.apps.ForecastingConfig',
 ]
 
 MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'emarket.middleware.RequestLoggingMiddleware',
+    'emarket.middleware.SecurityHeadersMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = "emarket.urls"
@@ -87,7 +99,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "emarket.wsgi.application"
 
-
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
@@ -99,8 +110,48 @@ DATABASES = {
 }
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': ('rest_framework_simplejwt.authentication.JWTAuthentication',)
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_AUTHENTICATION_CLASSES': ('rest_framework_simplejwt.authentication.JWTAuthentication',),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'emarket.pagination.CustomPageNumberPagination',
+    'PAGE_SIZE': 10,
+    'DEFAULT_FILTER_BACKENDS': (
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ),
+    'EXCEPTION_HANDLER': 'emarket.exceptions.custom_exception_handler',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/day',
+        'user': '1000/day'
+    }
+}
 
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'E-Market API',
+    'DESCRIPTION': 'A full-featured e-commerce platform API',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SWAGGER_UI_SETTINGS': {
+        'deepLinking': True,
+        'persistAuthorization': True,
+        'displayOperationId': True,
+    },
+    'COMPONENT_SPLIT_REQUEST': True,
+    'TAGS': [
+        {'name': 'auth', 'description': 'Authentication endpoints'},
+        {'name': 'products', 'description': 'Product management'},
+        {'name': 'cart', 'description': 'Shopping cart operations'},
+        {'name': 'orders', 'description': 'Order management'},
+        {'name': 'payments', 'description': 'Payment processing'},
+        {'name': 'support', 'description': 'Customer support'},
+    ],
 }
 
 SIMPLE_JWT = {
@@ -122,7 +173,105 @@ SIMPLE_JWT = {
 
 }
 
+# Celery Configuration
+CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
 
+# Forecasting Settings
+FORECAST_ALERT_EMAILS = ['admin@example.com']  # Update with your email
+FORECAST_MONITORING = {
+    'mape_threshold': 50,
+    'anomaly_threshold': 3,
+    'min_history_days': 30,
+}
+
+# Cache settings
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/1'),
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+# Celery settings for forecasting tasks
+CELERY_BEAT_SCHEDULE = {
+    'update-forecasts': {
+        'task': 'forecasting.tasks.update_all_forecasts',
+        'schedule': crontab(hour=0, minute=0),  # Daily at midnight
+    },
+    'monitor-forecasts': {
+        'task': 'forecasting.tasks.monitor_forecasts',
+        'schedule': crontab(hour='*/4'),  # Every 4 hours
+    },
+    'cleanup-old-forecasts': {
+        'task': 'forecasting.tasks.cleanup_old_forecasts',
+        'schedule': crontab(hour=1, minute=0),  # Daily at 1 AM
+    },
+}
+
+# Security Settings
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_HSTS_SECONDS = 31536000
+SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+# CORS settings
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+CORS_ALLOW_CREDENTIALS = True
+
+# Debug Toolbar settings
+INTERNAL_IPS = [
+    '127.0.0.1',
+]
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'file': {
+            'level': 'INFO',
+            'class': 'logging.FileHandler',
+            'filename': 'debug.log',
+            'formatter': 'verbose',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'emarket': {
+            'handlers': ['file', 'console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -142,7 +291,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
@@ -153,7 +301,6 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
